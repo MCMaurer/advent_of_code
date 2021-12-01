@@ -26,3 +26,15 @@ d %>%
                                .complete = T),
          increase = sum_3 > lag_sum_3) %>% 
   summarise(num_increases = sum(increase, na.rm = T))
+
+
+# shortest -------------------------------------------------------------------------
+
+sum(lag(d$depths) < d$depths, na.rm = T)
+
+d <- d %>% 
+  mutate(sum_3 = slide_dbl(depths, sum, 
+                           .before = 0, .after = 2, 
+                           .complete = T))
+
+sum(lag(d$sum_3) < d$sum_3, na.rm = T)
