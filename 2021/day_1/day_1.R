@@ -38,3 +38,14 @@ d <- d %>%
                            .complete = T))
 
 sum(lag(d$sum_3) < d$sum_3, na.rm = T)
+
+
+# Emil Hvitfeldt's approach -------------------------------------------------
+
+input <- scan("2021/day_1/input.txt")
+
+sum(diff(input, lag = 1) > 0)
+
+sum(diff(input, lag = 3) > 0)
+
+# you don't actually need to compare the whole sums of the windows. Two overlapping windows share all the intermediate values, it's just the first and last values that actually differ, so you can just compare those directly. So you just get the differences between lagged values

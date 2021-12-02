@@ -1,4 +1,3 @@
-from operator import concat
 import numpy as np
 import pandas as pd
 
@@ -19,5 +18,8 @@ dd["increase"] = dd["sum_roll3"] > dd["lag"]
 
 ans2 = dd["increase"].sum()
 
-
 print(f'The answer to Part 1 is {ans1}.\nThe answer to Part 2 is {ans2}.')
+
+def sliding_window_sum(nums): return [sum(nums[i:i+3]) for i in range(len(nums))]
+
+sliding_window_sum(d)
