@@ -1,10 +1,7 @@
 import pandas as pd
 
-dd = pd.read_table("2021/day_2/input.txt", names=["moves"])
-
+dd = pd.read_table("2021/day_2/input.txt", sep = " ", names=["dir", "len"])
 # Part 1
-
-dd[["dir", "len"]] = dd["moves"].str.split(" ", 1, expand=True)
 
 dd["len"] = pd.to_numeric(dd["len"])
 
