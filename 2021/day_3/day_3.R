@@ -1,14 +1,10 @@
 library(tidyverse)
-library(slider)
 
 d <- read_table("2021/day_3/input.txt", col_names = "bin")
 
 d <- str_split_fixed(d$bin, "", n = nchar(d$bin[1])) %>% 
   as_tibble() %>% 
   mutate(across(.fns = as.numeric))
-
-d
-
 
 # part 1 ------------------------------------------------------------------
 
@@ -119,4 +115,5 @@ co2 <- reduce(1:12, common_filter, .init = d, most = F)
 
 ans2 <- to_dec(o2)*to_dec(co2)
 ans2
+
 
