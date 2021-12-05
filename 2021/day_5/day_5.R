@@ -13,19 +13,17 @@ d <- read_delim("2021/day_5/input.txt",
     TRUE ~ "d"
   ))
 
-
-# part 1 ------------------------------------------------------------------
-
-dhv <- d %>% 
-  filter(dir != "d")
-
 get_coords <- function(x1, y1, x2, y2, dir){
   if(dir == "v") x <- tibble(x = x1:x2, y = y1)
   if(dir == "h") x <- tibble(x = x1, y = y1:y2)
+  if(dir == "d") x <- tibble(x = x1:x2, y = y1:y2)
   return(x)
 }
 
-dhv %>% 
+# part 1 ------------------------------------------------------------------
+
+d %>% 
+  filter(dir != "d") %>% 
   rowwise() %>% 
   mutate(coords_covered = list(get_coords(x1, y1, x2, y2, dir))) %>% 
   unnest_wider(coords_covered) %>% 
@@ -33,17 +31,10 @@ dhv %>%
   count(x, y, name = "n_overlaps") %>% 
   count(n_overlaps, name = "n_points") %>% 
   filter(n_overlaps > 1) %>% 
-  summarise(sum(n_points))
+  summarise(ans = sum(n_points))
 
 
 # part 2 ------------------------------------------------------------------
-
-get_coords <- function(x1, y1, x2, y2, dir){
-  if(dir == "v") x <- tibble(x = x1:x2, y = y1)
-  if(dir == "h") x <- tibble(x = x1, y = y1:y2)
-  if(dir == "d") x <- tibble(x = x1:x2, y = y1:y2)
-  return(x)
-}
 
 d %>%
   rowwise() %>% 
@@ -53,4 +44,4 @@ d %>%
   count(x, y, name = "n_overlaps") %>% 
   count(n_overlaps, name = "n_points") %>% 
   filter(n_overlaps > 1) %>% 
-  summarise(sum(n_points))
+  summarise(ans = sum(n_points))
