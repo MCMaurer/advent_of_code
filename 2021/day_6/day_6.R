@@ -41,6 +41,61 @@ res <- (mat_pow(m, 256) %*% init)
 
 format(sum(res), scientific = F)
 
+
+
+# most efficient approach -------------------------------------------------
+
+library(tidyverse)
+library(expm)
+
+input <- scan("2021/day_6/input.txt", sep = ",") %>% 
+  factor(levels = 0:8) %>% 
+  table() %>% 
+  as.numeric() %>% 
+  rev()
+
+m <- matrix(0, nrow = 9, ncol = 9)
+m[cbind(2:9, 1:8)] <- 1
+m[c(1,3), 9] <- 1
+
+(m %^% 80 %*% init) %>% 
+  sum()
+
+# part 2
+options(scipen = 999)
+
+(m %^% 256 %*% init) %>% 
+  sum()
+
+(m %^% 8080 %*% init) %>% 
+  sum()
+
+
+# other approaches --------------------------------------------------------
+
 # you can also just use reduce() here instead of only on the matrix
 reduce(1:80, ~ m %*% .x, .init = init) %>% 
   sum()
+
+# eigenvalue decomp approach
+matrix.power <- function(A, n) {
+  e <- eigen(A)
+  return(e$vectors %*% diag(e$values^n) %*% solve(e$vectors) %>% Re())
+}
+
+# %^% is from expm package
+
+counts <- init
+
+microbenchmark::microbenchmark(
+  matrix.power(m, 256) %*% init,
+  reduce(1:256, ~ m %*% .x, .init = init),
+  (m %^% 256) %*% init,
+  for (i in seq_len(256)) {
+    n0 <- counts[9]
+    counts[-1] <- counts[-9]
+    counts[3] <- counts[3] + n0
+    counts[1] <- n0
+  }
+)
+
