@@ -41,3 +41,6 @@ res <- (mat_pow(m, 256) %*% init)
 
 format(sum(res), scientific = F)
 
+# you can also just use reduce() here instead of only on the matrix
+reduce(1:80, ~ m %*% .x, .init = init) %>% 
+  sum()
