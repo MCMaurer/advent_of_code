@@ -38,9 +38,24 @@ cost_fast <- function(n){
   n * (n+1) / 2
 }
 
-tc_fast <- function(midpoint, pos){
-  sum(cost_fast(abs(pos - midpoint)))
+# just check the mean. floor vs. ceiling depending on range of input values
+
+if(diff(range(dt)) %% 2 == 0){
+  m <- ceiling(mean(dt))
+} else {
+  m <- floor(mean(dt))
 }
 
-# just check the mean
-tc_fast(floor(mean(dt)), dt)
+sum(cost_fast(abs(dt - m)))
+
+# trying another input ----------------------------------------------------
+
+d2 <- scan("2021/day_7/other_input", sep = ",")
+
+diff(range(d2))
+tc_fast(floor(mean(d2)), d2) > tc_fast(ceiling(mean(d2)), d2)
+
+diff(range(dt))
+tc_fast(floor(mean(dt)), dt) > tc_fast(ceiling(mean(dt)), dt)
+
+# yeah I was right, floor vs ceiling depends on if the range of input values is odd or even in length
