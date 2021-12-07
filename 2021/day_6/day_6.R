@@ -64,3 +64,5 @@ microbenchmark::microbenchmark(
   }
 )
 
+# matrix multiplication is faster here because R uses some good C libraries for matrix algebra, whereas for loops in R are relatively slow. However, this probably isn't going to be true in a compiled language, since matrix operations are N^3 or whatever, or "The algorithm uses O(log2(k)) matrix multiplications." according to expm. Whereas the hash map or vector + for loop approach is O(N). I think. 
+
