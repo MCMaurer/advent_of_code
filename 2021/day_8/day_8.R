@@ -5,6 +5,7 @@ d <- read_lines("2021/day_8/input.txt")%>%
   separate(value, c("seven", "four"), sep = " \\| ") %>% 
   mutate(entry = row_number())
 
+# part 1
 d %>% 
   select(four, entry) %>% 
   rowwise() %>% 
@@ -15,16 +16,9 @@ d %>%
   mutate(str_len = str_length(value)) %>% 
   summarise(part_1 = sum(str_len %in% c(2, 3, 4, 7)))
 
-
-d <- read_lines("2021/day_8/input.txt")
-
+# part 2
 # just the ugliest thing I've ever written
 get_ans <- function(dt){
-  
-  dt <- dt %>% 
-    as_tibble() %>% 
-    separate(value, c("seven", "four"), sep = " \\| ") %>% 
-    mutate(entry = row_number())
   
   dt7 <- dt %>% 
     select(seven, entry) %>% 
@@ -32,7 +26,8 @@ get_ans <- function(dt){
     mutate(seven = str_split(seven, " "),
            type = 7) %>% 
     unnest(seven) %>% 
-    rename(value = seven)
+    rename(value = seven) %>% 
+    mutate(str_len = str_length(value))
   
   dt4 <- dt %>% 
     select(four, entry) %>% 
@@ -42,24 +37,15 @@ get_ans <- function(dt){
     unnest(four) %>% 
     rename(value = four)
   
-  dd_tot <- bind_rows(dt4, dt7) %>% 
-    mutate(str_len = str_length(value))
-  
-  known_segs <- segs %>% filter(str_len %in% c(2,4,3,7))
-  
-  ddt <- dd_tot %>% 
-    filter(type == 7) %>% 
-    left_join(known_segs)
+  ddt <- dt7 %>% 
+    left_join(tibble(digit = c(1,4,7,8),
+                     str_len = c(2,4,3,7)))
   
   find_a <- function(vals){
     ones <- str_split(vals[1], "") %>% pluck(1)
     sevens <- str_split(vals[2], "") %>% pluck(1)
     sevens[!(sevens %in% ones)]
   }
-  
-  ddt_known <- ddt %>%
-    filter(!is.na(digit)) %>% 
-    select(value, digit)
   
   ddt_a <- ddt %>% 
     filter(digit %in% c(1,7)) %>% 
@@ -101,8 +87,6 @@ get_ans <- function(dt){
     arrange(str_len) %>% 
     pull(value) %>% 
     find_f_and_6()
-  
-  ddt_f_6
   
   ddt$digit[ddt$value == ddt_f_6$six] <- 6
   
@@ -175,13 +159,10 @@ get_ans <- function(dt){
     as.numeric()
 }
 
-dt <- "eb cbgfae cabdf fedab efb adgcef cbgaefd egdb dbgefa eafgd | dfbae be gdafe gcefab"
-
-get_ans(dt)
-
-
-
-ans <- map(d, get_ans)
+ans <- d %>% 
+  group_by(entry) %>% 
+  group_split() %>% 
+  map(get_ans)
 
 reduce(ans, `+`)
 
