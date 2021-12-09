@@ -4,8 +4,6 @@ d <- read_lines("2021/day_9/input.txt")
 
 n_col <- str_length(d[1])
 n_row <- length(d)
-n_row
-n_col
 
 d <- d %>% 
   str_c(collapse = "") %>% 
@@ -14,35 +12,12 @@ d <- d %>%
   as.numeric() %>% 
   matrix(nrow = n_row, byrow = T)
 
-# taking a naive approach to start
+b <- rbind(d[-1,], rep(10, n_col))
+a <- rbind(rep(10, n_col), d[-n_row,])
+l <- cbind(rep(10, n_row), d[,-n_col])
+r <- cbind(d[,-1], rep(10, n_row))
 
-less_than <- function(x, y){
-  if(is_empty(y)){
-    ans <- TRUE
-  } else {
-    ans <- x < y
-  }
-  return(ans)
-}
-
-is_min <- function(row, col, d){
-  f <- d[row, col]
-  a <- tryCatch(d[row+1, col], error = function(e) e <- numeric(0))
-  b <- tryCatch(d[row-1, col], error = function(e) e <- numeric(0))
-  l <- tryCatch(d[row, col-1], error = function(e) e <- numeric(0))
-  r <- tryCatch(d[row, col+1], error = function(e) e <- numeric(0))
-
-  less_than(f, a) & less_than(f, b) & less_than(f, l) & less_than(f, r)
-}
-
-x <- rep(1:n_row, n_col)
-
-y <- rep(1:n_col, n_row) %>% sort()
-
-mins <- map2_lgl(x, y, is_min, d = d)
-
-sum(d[mins]+1)
-
+sum(d[d < b & d < a & d < l & d < r]+1)
 
 # part 2 ------------------------------------------------------------------
 
@@ -64,3 +39,24 @@ freq(regions) %>%
   slice_max(count, n = 3) %>% 
   pull(count) %>% 
   prod()
+
+
+r <- raster(d)
+extent(r) <- extent(c(0, n_row, 0, n_col) + 0.5)
+
+## Find the maximum value within the 9-cell neighborhood of each cell
+min_narm <- function(x) min(x, na.rm=TRUE)
+ww <- matrix(1, nrow=3, ncol=3) ## Weight matrix for cells in moving window
+ww[cbind(c(1,1,3,3), c(1,3,1,3))] <- 0
+ww
+localmin <- focal(r, fun = min_narm, w = ww, pad = F)
+
+## Does each cell have the maximum value in its neighborhood?
+r2 <- r == localmin
+
+## Get x-y coordinates of those cells that are local maxima
+minima <- xyFromCell(r2, Which(r2==1, cells=TRUE))
+minima
+
+dmin <- d[minima]
+sum(dmin[dmin != 9]+1)
