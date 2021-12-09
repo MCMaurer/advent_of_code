@@ -1,12 +1,11 @@
 library(tidyverse)
 
-d <- read_lines("2021/day_8/input.txt")%>% 
+d <- read_lines("2021/day_8/input.txt")
+
+d %>% 
   as_tibble() %>% 
   separate(value, c("seven", "four"), sep = " \\| ") %>% 
-  mutate(entry = row_number())
-
-# part 1
-d %>% 
+  mutate(entry = row_number()) %>% 
   select(four, entry) %>% 
   rowwise() %>% 
   mutate(four = str_split(four, " "),
@@ -16,155 +15,59 @@ d %>%
   mutate(str_len = str_length(value)) %>% 
   summarise(part_1 = sum(str_len %in% c(2, 3, 4, 7)))
 
-# part 2
-# just the ugliest thing I've ever written
-get_ans <- function(dt){
+solve_pattern <- function(d){
+  n <- vector(mode = "list", length = 10)
+  n <- set_names(n, 0:9)
   
-  dt7 <- dt %>% 
-    select(seven, entry) %>% 
-    rowwise() %>% 
-    mutate(seven = str_split(seven, " "),
-           type = 7) %>% 
-    unnest(seven) %>% 
-    rename(value = seven) %>% 
-    mutate(str_len = str_length(value))
+  v <- d %>% 
+    str_split(" \\| ") %>% 
+    pluck(1) %>% 
+    str_split(" ")
   
-  dt4 <- dt %>% 
-    select(four, entry) %>% 
-    rowwise() %>% 
-    mutate(four = str_split(four, " "),
-           type = 4) %>% 
-    unnest(four) %>% 
-    rename(value = four)
+  v <- set_names(v, c("pattern", "output"))
   
-  ddt <- dt7 %>% 
-    left_join(tibble(digit = c(1,4,7,8),
-                     str_len = c(2,4,3,7)))
+  p <- v$pattern
   
-  find_a <- function(vals){
-    ones <- str_split(vals[1], "") %>% pluck(1)
-    sevens <- str_split(vals[2], "") %>% pluck(1)
-    sevens[!(sevens %in% ones)]
+  n$`1` <- p[str_length(p) == 2]
+  n$`4` <- p[str_length(p) == 4]
+  n$`7` <- p[str_length(p) == 3]
+  n$`8` <- p[str_length(p) == 7]
+  
+  
+  str_inter_l <- function(unknown, known){
+    uv <- map(unknown, ~str_split(.x, "") %>% pluck(1))
+    kv <- str_split(known, "") %>% pluck(1)
+    map(uv, ~intersect(.x, kv)) %>% 
+      map_dbl(length)
   }
   
-  ddt_a <- ddt %>% 
-    filter(digit %in% c(1,7)) %>% 
-    arrange(digit) %>% 
-    pull(value) %>% 
-    find_a()
+  n$`6` <- p[str_inter_l(p, n$`1`) == 1 & str_length(p) == 6]
+  n$`9` <- p[str_inter_l(p, n$`4`) == 4 & str_length(p) == 6]
+  n$`0` <- p[str_length(p) == 6 & p != n$`6` & p != n$`9`]
   
-  ddt <- ddt %>% 
-    mutate(new_val = str_remove(value, ddt_a))
+  n$`3` <- p[str_inter_l(p, n$`7`) == 3 & str_length(p) == 5]
+  n$`5` <- p[str_inter_l(p, n$`6`) == 5 & str_length(p) == 5]
+  n$`2` <- p[str_length(p) == 5 & p != n$`3` & p != n$`5`]
   
-  find_f_and_6 <- function(vals){
-    ones <- str_split(vals[1], "") %>% pluck(1)
-    six1 <- str_split(vals[2], "") %>% pluck(1)
-    six2 <- str_split(vals[3], "") %>% pluck(1)
-    six3 <- str_split(vals[4], "") %>% pluck(1)
-    
-    f1 <- six1[six1 %in% ones]
-    f2 <- six2[six2 %in% ones]
-    f3 <- six3[six3 %in% ones]
-
-    if(length(f1) == 1){
-      f <- f1
-      six <- six1
-    }
-    if(length(f2) == 1){
-      f <- f2
-      six <- six2
-    }
-    if(length(f3) == 1){
-      f <- f3
-      six <- six3
-    }
-    
-    return(list(f = f, six = str_c(six, collapse = "")))
+  sort_letters <- function(x){
+    str_split(x, "") %>% 
+      map(sort) %>% 
+      map_chr(paste, collapse = "")
   }
   
-  ddt_f_6 <- ddt %>% 
-    filter(str_len %in% c(2,6)) %>% 
-    arrange(str_len) %>% 
-    pull(value) %>% 
-    find_f_and_6()
+  key <- tibble(digit = names(n) %>% as.numeric(),
+                pattern = unlist(n) %>% sort_letters())
   
-  ddt$digit[ddt$value == ddt_f_6$six] <- 6
-  
-  ddt <- ddt %>% 
-    mutate(new_val = str_remove(new_val, ddt_f_6$f))
-
-  ddt_c <- ddt %>% 
-    filter(digit == 1) %>% 
-    pull(new_val)
-
-  ddt <- ddt %>% 
-    mutate(new_val = str_remove(new_val, ddt_c))
-  
-  ddt$digit[str_length(ddt$new_val) == 2 & is.na(ddt$digit)] <- 3
-  
-  find_b_d_g <- function(vals){
-    threes <- str_split(vals[1], "") %>% pluck(1)
-    fours <- str_split(vals[2], "") %>% pluck(1)
-    
-    d <- threes[threes %in% fours]
-    g <- threes[!(threes %in% fours)]
-    b <- fours[!(fours %in% threes)]
-    
-    return(list(d = d, g = g, b = b))
-  }
-  
-  ddt_d_g_b <- ddt %>% 
-    filter(digit %in% 3:4) %>% 
-    arrange(digit) %>% 
-    pull(new_val) %>% 
-    find_b_d_g()
-  
-  ddt <- ddt %>% 
-    mutate(new_val = str_remove(new_val, ddt_d_g_b$d),
-           new_val = str_remove(new_val, ddt_d_g_b$g),
-           new_val = str_remove(new_val, ddt_d_g_b$b))
-  
-  ddt <- ddt %>% 
-    mutate(digit = case_when(
-      str_len == 5 & str_length(new_val) == 1 & is.na(digit) ~ 2,
-      str_len == 5 & str_length(new_val) == 0 & is.na(digit) ~ 5,
-      str_len == 6 & str_length(new_val) == 1 & is.na(digit) ~ 0,
-      str_len == 6 & str_length(new_val) == 0 & is.na(digit) ~ 9,
-      TRUE ~ digit
-    ))
-  
-  ddt_key <- ddt %>% 
-    select(value, digit)
-  
-  sort_chars <- function(x){
-    x %>% 
-      str_split("") %>% 
-      pluck(1) %>% 
-      str_sort() %>% 
-      str_c(collapse = "")
-  }
-  
-  ddt_key <- ddt_key %>% 
-    rowwise() %>% 
-    mutate(value = sort_chars(value))
-  
-  dt4 %>% 
-    rowwise() %>% 
-    mutate(value = sort_chars(value)) %>% 
-    select(value) %>% 
-    left_join(ddt_key) %>% 
+  tibble(pattern = v$output %>% sort_letters()) %>% 
+    left_join(key) %>% 
     pull(digit) %>% 
-    as.character() %>% 
-    str_c(collapse = "") %>% 
+    paste0(collapse = "") %>% 
     as.numeric()
 }
 
-ans <- d %>% 
-  group_by(entry) %>% 
-  group_split() %>% 
-  map(get_ans)
-
-reduce(ans, `+`)
+map(d, solve_pattern) %>% 
+  unlist() %>% 
+  sum()
 
 
 # trying David Robinson's solution ----------------------------------------
