@@ -1,6 +1,6 @@
 library(tidyverse)
 
-m <- scan("2021/day_11/input.txt") 
+m <- scan("2021/day_11/input.txt")
 
 m <- m %>% 
   paste0(collapse = "") %>% 
@@ -9,33 +9,36 @@ m <- m %>%
   as.numeric() %>% 
   matrix(nrow = length(m), byrow = T)
 
-na_F <- function(x){
-  x2 <- if_else(is.na(x), F, x)
-  dim(x2) <- dim(x)
-  return(x2)
+make_neighbor_mats <- function(m, neighbors = 9){
+  N <- apply(m, 2, lag, default = 0)
+  S <- apply(m, 2, lead, default = 0)
+  W <- t(apply(m, 1, lag, default = 0))
+  E <- t(apply(m, 1, lead, default = 0))
+  
+  if(neighbors == 4){
+    return(list(N = N, S = S, W = W, E = E))
+  } else {
+    NW <- apply(W, 2, lag, default = 0)
+    NE <- apply(E, 2, lag, default = 0)
+    SW <- apply(W, 2, lead, default = 0)
+    SE <- apply(E, 2, lead, default = 0)
+    
+    return(list(N = N, S = S, W = W, E = E, NW = NW, NE = NE, SW = SW, SE = SE))
+  }
 }
 
 get_changes <- function(m){
-  t <- apply(m, 2, lag, default = 0)
-  b <- apply(m, 2, lead, default = 0)
-  l <- t(apply(m, 1, lag, default = 0))
-  r <- t(apply(m, 1, lead, default = 0))
   
-  tl <- apply(l, 2, lag, default = 0)
-  tr <- apply(r, 2, lag, default = 0)
-  bl <- apply(l, 2, lead, default = 0)
-  br <- apply(r, 2, lead, default = 0)
-  
-  neighbor_mats <- list(t = t, b = b, l = l, r = r, tl= tl, tr = tr, bl = bl, br = br)
-  
-  changes <- map(neighbor_mats, ~ .x > 9) %>% 
-    map(na_F) %>% 
+  make_neighbor_mats(m) %>% 
+    map(~.x > 9) %>% 
+    map(replace_na, F) %>% 
     reduce(`+`)
-  
-  return(changes)
 }
 
-run_step <- function(d){
+run_step <- function(d, dummy){
+  
+  print(dummy)
+  
   m <- d$m
   flashes <- d$flashes
   
@@ -58,22 +61,9 @@ run_step <- function(d){
 
 ml <- list(m = m, flashes = 0)
 
-run_step(ml) %>% 
-  run_step()
-
-m2 <- ml
-
-for (i in 1:100) {
-  m2 <- run_step(m2)
-}
-
-m2$flashes
+reduce(1:100, run_step, .init = ml) %>% 
+  pluck("flashes")
 
 # part 2
 
-m2 <- ml
-
-for (i in 1:1000) {
-  print(i)
-  m2 <- run_step(m2)
-}
+reduce(1:1000, run_step, .init = ml)
